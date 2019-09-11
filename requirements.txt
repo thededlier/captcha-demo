@@ -1,0 +1,7 @@
+captcha-break
+captcha
+numpy
+matplotlib
+tensorflow-gpu
+pydot
+pandas
