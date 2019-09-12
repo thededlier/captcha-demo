@@ -1,66 +1,50 @@
 #!/usr/bin/env python3
 
-from captcha.image import ImageCaptcha
-import matplotlib.pyplot as plt
-import numpy as np
+import os
+import numpy
 import random
 import string
-import tensorflow as tf
-import tensorflow.keras.backend
-from tensorflow.keras.utils import Sequence
 import cv2
+import argparse
+import captcha.image
 
-characters = string.digits + string.ascii_uppercase
-print(characters)
+captcha_symbols = string.digits + string.ascii_uppercase
 
-width, height, n_len, n_class = 128, 64, 4, len(characters)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--width', help='Width of captcha image', type=int)
+    parser.add_argument('--height', help='Height of captcha image', type=int)
+    parser.add_argument('--length', help='How many characters to use in captchas', type=int)
+    parser.add_argument('--count', help='How many captchas to generate', type=int)
+    parser.add_argument('--output-dir', help='Where to store the generated captchas', type=str)
+    args = parser.parse_args()
 
-config = tf.compat.v1.ConfigProto()
-# config.gpu_options.allow_growth=True
-sess = tf.compat.v1.Session(config=config)
-# tf.compat.v1.keras.backend.set_session(sess)
+    if args.width is None:
+        print("Please specify the captcha image width")
+        exit(1)
 
-class CaptchaSequence(Sequence):
-    def __init__(self, characters, batch_size, steps, n_len=4, width=128, height=64):
-        self.characters = characters
-        self.batch_size = batch_size
-        self.steps = steps
-        self.n_len = n_len
-        self.width = width
-        self.height = height
-        self.n_class = len(characters)
-        self.generator = ImageCaptcha(width=width, height=height)
+    if args.height is None:
+        print("Please specify the captcha image height")
+        exit(1)
 
-    def __len__(self):
-        return self.steps
+    if args.length is None:
+        print("Please specify the captcha length")
+        exit(1)
 
-    def __getitem__(self, idx):
-        X = np.zeros((self.batch_size, self.height, self.width, 3), dtype=np.float32)
-        y = [np.zeros((self.batch_size, self.n_class), dtype=np.uint8) for i in range(self.n_len)]
-        for i in range(self.batch_size):
-            random_str = ''.join([random.choice(self.characters) for j in range(self.n_len)])
-            X[i] = np.array(self.generator.generate_image(random_str)) / 255.0
-            for j, ch in enumerate(random_str):
-                y[j][i, :] = 0
-                y[j][i, self.characters.find(ch)] = 1
-        return X, y
+    if args.count is None:
+        print("Please specify the captcha count to generate")
+        exit(1)
 
-def decode(y):
-    y = np.argmax(np.array(y), axis=2)[:,0]
-    return ''.join([characters[x] for x in y])
+    if args.output_dir is None:
+        print("Please specify the captcha output directory")
+        exit(1)
 
-data = CaptchaSequence(characters, batch_size=10, steps=2)
-# X, y = data[0]
-# imgplot = plt.imshow(X[0])
-# plt.title(decode(y))
-# plt.show()
+    captcha_generator = captcha.image.ImageCaptcha(width=args.width, height=args.height)
 
-for ix in range(len(data)):
-  X, y = data[ix]
-  image = X[0]
-  print(image.shape)
-  plt.imshow(image)
-  plt.show()
-  image_transposed = np.uint8(np.transpose(image, (2, 0, 1)))
-  print(image_transposed.shape)
-  cv2.imwrite("data/captcha-"+str(decode(y))+".png", image_transposed)
+    for i in range(args.count):
+        random_str = ''.join([random.choice(captcha_symbols) for j in range(args.length)])
+        image = numpy.array(captcha_generator.generate_image(random_str))
+        cv2.imwrite(os.path.join(args.output_dir, random_str+'.png'), image)
+
+if __name__ == '__main__':
+    main()
