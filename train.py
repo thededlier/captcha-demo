@@ -123,30 +123,31 @@ def main():
     with open(args.symbols) as symbols_file:
         captcha_symbols = symbols_file.readline()
 
-    model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3))
+    with tf.device('/gpu:0'):
+        model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3))
 
-    if args.input_model is not None:
-        model.load_weights(args.input_model)
+        if args.input_model is not None:
+            model.load_weights(args.input_model)
 
-    model.compile(loss='categorical_crossentropy',
-                  optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
-                  metrics=['accuracy'])
+        model.compile(loss='categorical_crossentropy',
+                      optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
+                      metrics=['accuracy'])
 
-    model.summary()
+        model.summary()
 
-    training_data = ImageSequence(args.train_dataset, 32, args.length, captcha_symbols, args.width, args.height)
-    validation_data = ImageSequence(args.validate_dataset, 32, args.length, captcha_symbols, args.width, args.height)
+        training_data = ImageSequence(args.train_dataset, 32, args.length, captcha_symbols, args.width, args.height)
+        validation_data = ImageSequence(args.validate_dataset, 32, args.length, captcha_symbols, args.width, args.height)
 
-    callbacks = [keras.callbacks.EarlyStopping(patience=3),
-                 # keras.callbacks.CSVLogger('log.csv'),
-                 keras.callbacks.ModelCheckpoint(args.output_model, save_best_only=False)]
+        callbacks = [keras.callbacks.EarlyStopping(patience=3),
+                     # keras.callbacks.CSVLogger('log.csv'),
+                     keras.callbacks.ModelCheckpoint(args.output_model, save_best_only=False)]
 
-    model.fit_generator(generator=training_data,
-                        validation_data=validation_data,
-                        epochs=args.iterations,
-                        callbacks=callbacks,
-                        use_multiprocessing=True,
-                        workers=2)
+        model.fit_generator(generator=training_data,
+                            validation_data=validation_data,
+                            epochs=args.iterations,
+                            callbacks=callbacks,
+                            use_multiprocessing=True,
+                            workers=2)
 
 if __name__ == '__main__':
     main()
