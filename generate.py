@@ -14,7 +14,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--width', help='Width of captcha image', type=int)
     parser.add_argument('--height', help='Height of captcha image', type=int)
-    parser.add_argument('--length', help='How many characters to use in captchas', type=int)
+    parser.add_argument('--length', help='Length of captchas in characters', type=int)
     parser.add_argument('--count', help='How many captchas to generate', type=int)
     parser.add_argument('--output-dir', help='Where to store the generated captchas', type=str)
     args = parser.parse_args()
