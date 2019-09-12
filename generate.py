@@ -8,8 +8,6 @@ import cv2
 import argparse
 import captcha.image
 
-captcha_symbols = string.digits
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--width', help='Width of captcha image', type=int)
@@ -17,6 +15,7 @@ def main():
     parser.add_argument('--length', help='Length of captchas in characters', type=int)
     parser.add_argument('--count', help='How many captchas to generate', type=int)
     parser.add_argument('--output-dir', help='Where to store the generated captchas', type=str)
+    parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
     args = parser.parse_args()
 
     if args.width is None:
@@ -39,7 +38,15 @@ def main():
         print("Please specify the captcha output directory")
         exit(1)
 
+    if args.symbols is None:
+        print("Please specify the captcha symbols file")
+        exit(1)
+
     captcha_generator = captcha.image.ImageCaptcha(width=args.width, height=args.height)
+
+    captcha_symbols = None
+    with open(args.symbols) as symbols_file:
+        captcha_symbols = symbols_file.readline()
 
     for i in range(args.count):
         random_str = ''.join([random.choice(captcha_symbols) for j in range(args.length)])

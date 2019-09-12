@@ -13,8 +13,6 @@ import argparse
 import tensorflow as tf
 import tensorflow.keras as keras
 
-captcha_symbols = string.digits
-
 # Build a Keras model given some parameters
 def create_model(captcha_length, captcha_num_symbols, input_shape, model_depth=5, module_size=2):
   input_tensor = keras.Input(input_shape)
@@ -86,6 +84,7 @@ def main():
     parser.add_argument('--output-model', help='Where to save the trained model', type=str)
     parser.add_argument('--input-model', help='Where to look for the input model to continue training', type=str)
     parser.add_argument('--iterations', help='How many training iterations to do', type=int)
+    parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
     args = parser.parse_args()
 
     if args.width is None:
@@ -115,6 +114,14 @@ def main():
     if args.output_model is None:
         print("Please specify the path to save the trained model")
         exit(1)
+
+    if args.symbols is None:
+        print("Please specify the captcha symbols file")
+        exit(1)
+
+    captcha_symbols = None
+    with open(args.symbols) as symbols_file:
+        captcha_symbols = symbols_file.readline()
 
     model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3))
 
