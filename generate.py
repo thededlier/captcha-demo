@@ -45,6 +45,7 @@ def main():
         random_str = ''.join([random.choice(captcha_symbols) for j in range(args.length)])
         image = numpy.array(captcha_generator.generate_image(random_str))
         cv2.imwrite(os.path.join(args.output_dir, random_str+'.png'), image)
+        print("Generated captcha " + str(i) + " of " + str(args.count))
 
 if __name__ == '__main__':
     main()

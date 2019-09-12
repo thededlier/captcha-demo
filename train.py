@@ -27,7 +27,7 @@ def create_model(captcha_length, captcha_num_symbols, input_shape, model_depth=5
       x = keras.layers.MaxPooling2D(2)(x)
 
   x = keras.layers.Flatten()(x)
-  x = [keras.layers.Dense(captcha_num_symbols, activation='softmax', name='c%d'%(i+1))(x) for i in range(captcha_length)]
+  x = [keras.layers.Dense(captcha_num_symbols, activation='softmax', name='char_%d'%(i+1))(x) for i in range(captcha_length)]
   model = keras.Model(inputs=input_tensor, outputs=x)
 
   return model
@@ -116,12 +116,10 @@ def main():
         print("Please specify the path to save the trained model")
         exit(1)
 
-    model = None
+    model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3))
 
     if args.input_model is not None:
-      pass
-    else:
-      model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3))
+        model.load_weights(args.input_model)
 
     model.compile(loss='categorical_crossentropy',
                   optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
@@ -133,8 +131,8 @@ def main():
     validation_data = ImageSequence(args.validate_dataset, 32, args.length, captcha_symbols, args.width, args.height)
 
     callbacks = [keras.callbacks.EarlyStopping(patience=3),
-                 keras.callbacks.CSVLogger('log.csv'),
-                 keras.callbacks.ModelCheckpoint('model.h5', save_best_only=True)]
+                 # keras.callbacks.CSVLogger('log.csv'),
+                 keras.callbacks.ModelCheckpoint(args.output_model, save_best_only=False)]
 
     model.fit_generator(generator=training_data,
                         validation_data=validation_data,

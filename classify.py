@@ -1,53 +1,33 @@
-# import tensorflow as tf
-# import tensorflow.keras.backend
-# from tensorflow.keras.utils import Sequence
+#!/usr/bin/env python3
 
-# config = tf.compat.v1.ConfigProto()
-# config.gpu_options.allow_growth=True
-# sess = tf.compat.v1.Session(config=config)
-# tf.compat.v1.keras.backend.set_session(sess)
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# class CaptchaSequence(Sequence):
-    # def __init__(self, captcha_symbols, batch_size, steps, captcha_length=4, width=128, height=64):
-        # self.captcha_symbols = captcha_symbols
-        # self.batch_size = batch_size
-        # self.steps = steps
-        # self.captcha_length = captcha_length
-        # self.width = width
-        # self.height = height
-        # self.num_captcha_symbols = len(captcha_symbols)
-        # self.generator = ImageCaptcha(width=width, height=height)
+import os
+import cv2
+import numpy
+import string
+import random
+import argparse
+import tensorflow as tf
+import tensorflow.keras as keras
 
-    # def __len__(self):
-        # return self.steps
+captcha_symbols = string.digits + string.ascii_uppercase
 
-    # def __getitem__(self, idx):
-        # X = np.zeros((self.batch_size, self.height, self.width, 3), dtype=np.float32)
-        # y = [np.zeros((self.batch_size, self.num_captcha_symbols), dtype=np.uint8) for i in range(self.captcha_length)]
-        # for i in range(self.batch_size):
-            # random_str = ''.join([random.choice(self.captcha_symbols) for j in range(self.captcha_length)])
-            # X[i] = np.array(self.generator.generate_image(random_str)) / 255.0
-            # for j, ch in enumerate(random_str):
-                # y[j][i, :] = 0
-                # y[j][i, self.captcha_symbols.find(ch)] = 1
-        # return X, y
+# Build a Keras model given some parameters
+def create_model(captcha_length, captcha_num_symbols, input_shape, model_depth=5, module_size=2):
+  input_tensor = keras.Input(input_shape)
+  x = input_tensor
+  for i, module_length in enumerate([module_size] * model_depth):
+      for j in range(module_length):
+          x = keras.layers.Conv2D(32*2**min(i, 3), kernel_size=3, padding='same', kernel_initializer='he_uniform')(x)
+          x = keras.layers.BatchNormalization()(x)
+          x = keras.layers.Activation('relu')(x)
+      x = keras.layers.MaxPooling2D(2)(x)
 
-# def decode(y):
-    # y = np.argmax(np.array(y), axis=2)[:,0]
-    # return ''.join([captcha_symbols[x] for x in y])
+  x = keras.layers.Flatten()(x)
+  x = [keras.layers.Dense(captcha_num_symbols, activation='softmax', name='c%d'%(i+1))(x) for i in range(captcha_length)]
+  model = keras.Model(inputs=input_tensor, outputs=x)
 
-# data = CaptchaSequence(captcha_symbols, batch_size=10, steps=2)
-# X, y = data[0]
-# imgplot = plt.imshow(X[0])
-# plt.title(decode(y))
-# plt.show()
-
-# for ix in range(len(data)):
-  # X, y = data[ix]
-  # image = X[0]
-  # print(image.shape)
-  # plt.imshow(image)
-  # plt.show()
-  # image_transposed = np.uint8(np.transpose(image, (2, 0, 1)))
-  # print(image_transposed.shape)
-  # cv2.imwrite("data/captcha-"+str(decode(y))+".png", image)
+  return model
