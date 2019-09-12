@@ -13,7 +13,7 @@ import argparse
 import tensorflow as tf
 import tensorflow.keras as keras
 
-captcha_symbols = string.digits + string.ascii_uppercase
+captcha_symbols = string.digits
 
 # Build a Keras model given some parameters
 def create_model(captcha_length, captcha_num_symbols, input_shape, model_depth=5, module_size=2):

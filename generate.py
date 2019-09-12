@@ -8,7 +8,7 @@ import cv2
 import argparse
 import captcha.image
 
-captcha_symbols = string.digits + string.ascii_uppercase
+captcha_symbols = string.digits
 
 def main():
     parser = argparse.ArgumentParser()
