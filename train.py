@@ -1,26 +1,34 @@
+#!/usr/bin/env python3
+
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import os
 import cv2
+import numpy
+import string
+import random
 import argparse
 import tensorflow as tf
 import tensorflow.keras as keras
 
-# Build a Keras model given some parameters
-def create_model(captcha_length, captcha_num_symbols, input_shape=(128, 64, 3), model_depth=5, module_size=2):
-  model = keras.models.Sequential()
-  for i, module_length in enumerate([module_size] * model_depth):
-    for j in range(module_length):
-      model.add(keras.layers.Conv2D(32*2**min(i, 3), (3, 3), input_shape=input_shape, padding='same'))
-      model.add(keras.layers.BatchNormalization())
-      model.add(keras.layers.Activation('relu'))
-    model.add(keras.layers.MaxPooling2D(pool_size=2))
+captcha_symbols = string.digits + string.ascii_uppercase
 
-  model.add(keras.layers.Flatten())
-  for x in range(captcha_length):
-    model.add(keras.layers.Dense(captcha_num_symbols, activation='softmax'))
+# Build a Keras model given some parameters
+def create_model(captcha_length, captcha_num_symbols, input_shape, model_depth=5, module_size=2):
+  input_tensor = keras.Input(input_shape)
+  x = input_tensor
+  for i, module_length in enumerate([module_size] * model_depth):
+      for j in range(module_length):
+          x = keras.layers.Conv2D(32*2**min(i, 3), kernel_size=3, padding='same', kernel_initializer='he_uniform')(x)
+          x = keras.layers.BatchNormalization()(x)
+          x = keras.layers.Activation('relu')(x)
+      x = keras.layers.MaxPooling2D(2)(x)
+
+  x = keras.layers.Flatten()(x)
+  x = [keras.layers.Dense(captcha_num_symbols, activation='softmax', name='c%d'%(i+1))(x) for i in range(captcha_length)]
+  model = keras.Model(inputs=input_tensor, outputs=x)
 
   return model
 
@@ -28,10 +36,9 @@ def create_model(captcha_length, captcha_num_symbols, input_shape=(128, 64, 3), 
 # In this case, we have a folder full of images
 # Elements of a Sequence are *batches* of images, of some size batch_size
 class ImageSequence(keras.utils.Sequence):
-    def __init__(self, directory_name, batch_size, steps, captcha_length, captcha_symbols, captcha_width, captcha_height):
+    def __init__(self, directory_name, batch_size, captcha_length, captcha_symbols, captcha_width, captcha_height):
         self.directory_name = directory_name
         self.batch_size = batch_size
-        self.steps = steps
         self.captcha_length = captcha_length
         self.captcha_symbols = captcha_symbols
         self.captcha_width = captcha_width
@@ -40,16 +47,17 @@ class ImageSequence(keras.utils.Sequence):
         file_list = os.listdir(self.directory_name)
         self.files = dict(zip(map(lambda x: x.split('.')[0], file_list), file_list))
         self.used_files = []
+        self.count = len(file_list)
 
     def __len__(self):
-        return self.steps
+        return int(numpy.floor(self.count / self.batch_size))
 
     def __getitem__(self, idx):
-        X = np.zeros((self.batch_size, self.captcha_height, self.captcha_width, 3), dtype=np.float32)
-        y = [np.zeros((self.batch_size, self.captcha_symbols), dtype=np.uint8) for i in range(self.captcha_length)]
+        X = numpy.zeros((self.batch_size, self.captcha_height, self.captcha_width, 3), dtype=numpy.float32)
+        y = [numpy.zeros((self.batch_size, len(self.captcha_symbols)), dtype=numpy.uint8) for i in range(self.captcha_length)]
 
         for i in range(self.batch_size):
-            random_image_label = random.choice(self.files.keys())
+            random_image_label = random.choice(list(self.files.keys()))
             random_image_file = self.files[random_image_label]
 
             # We've used this image now, so we can't repeat it in this iteration
@@ -57,7 +65,10 @@ class ImageSequence(keras.utils.Sequence):
 
             # We have to scale the input pixel values to the range [0, 1] for
             # Keras so we divide by 255 since the image is 8-bit RGB
-            X[i] = np.array(cv2.imread(random_image_file)) / 255.0
+            raw_data = cv2.imread(os.path.join(self.directory_name, random_image_file))
+            rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
+            processed_data = numpy.array(rgb_data) / 255.0
+            X[i] = processed_data
 
             for j, ch in enumerate(random_image_label):
                 y[j][i, :] = 0
@@ -70,7 +81,8 @@ def main():
     parser.add_argument('--width', help='Width of captcha image', type=int)
     parser.add_argument('--height', help='Height of captcha image', type=int)
     parser.add_argument('--length', help='Length of captchas in characters', type=int)
-    parser.add_argument('--symbols', help='How many different symbols to use in captchas', type=int)
+    parser.add_argument('--train-dataset', help='Where to look for the training image dataset', type=str)
+    parser.add_argument('--validate-dataset', help='Where to look for the validation image dataset', type=str)
     parser.add_argument('--output-model', help='Where to save the trained model', type=str)
     parser.add_argument('--input-model', help='Where to look for the input model to continue training', type=str)
     parser.add_argument('--iterations', help='How many training iterations to do', type=int)
@@ -92,6 +104,14 @@ def main():
         print("Please specify the number of training iterations to do")
         exit(1)
 
+    if args.train_dataset is None:
+        print("Please specify the path to the training data set")
+        exit(1)
+
+    if args.validate_dataset is None:
+        print("Please specify the path to the validation data set")
+        exit(1)
+
     if args.output_model is None:
         print("Please specify the path to save the trained model")
         exit(1)
@@ -101,44 +121,27 @@ def main():
     if args.input_model is not None:
       pass
     else:
-      model = create_model(args.length, args.symbols)
+      model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3))
 
-    model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
+                  metrics=['accuracy'])
 
     model.summary()
 
-    # model.fit(train_images, train_labels, epochs=args.iterations)
+    training_data = ImageSequence(args.train_dataset, 32, args.length, captcha_symbols, args.width, args.height)
+    validation_data = ImageSequence(args.validate_dataset, 32, args.length, captcha_symbols, args.width, args.height)
 
-    # test_loss, test_acc = model.evaluate(test_images, test_labels)
+    callbacks = [keras.callbacks.EarlyStopping(patience=3),
+                 keras.callbacks.CSVLogger('log.csv'),
+                 keras.callbacks.ModelCheckpoint('model.h5', save_best_only=True)]
 
-    # print("Model trained to " + str(test_acc * 100) + "% accuracy")
+    model.fit_generator(generator=training_data,
+                        validation_data=validation_data,
+                        epochs=args.iterations,
+                        callbacks=callbacks,
+                        use_multiprocessing=True,
+                        workers=2)
 
 if __name__ == '__main__':
     main()
-
-# config = tf.compat.v1.ConfigProto()
-# config.gpu_options.allow_growth=True
-# sess = tf.compat.v1.Session(config=config)
-# tf.compat.v1.keras.backend.set_session(sess)
-
-# def decode(y):
-    # y = np.argmax(np.array(y), axis=2)[:,0]
-    # return ''.join([captcha_symbols[x] for x in y])
-
-# data = CaptchaSequence(captcha_symbols, batch_size=10, steps=2)
-# X, y = data[0]
-# imgplot = plt.imshow(X[0])
-# plt.title(decode(y))
-# plt.show()
-
-# for ix in range(len(data)):
-  # X, y = data[ix]
-  # image = X[0]
-  # print(image.shape)
-  # plt.imshow(image)
-  # plt.show()
-  # image_transposed = np.uint8(np.transpose(image, (2, 0, 1)))
-  # print(image_transposed.shape)
-  # cv2.imwrite("data/captcha-"+str(decode(y))+".png", image)
