@@ -26,3 +26,12 @@ For the initial problem of captcha recognition, we train the network for 100 epo
 
 The dataset for the initial training should be 128000 images, and the validation set should be 12800 images.
 
+## Running the classifier
+
+```
+./classify.py  --model-name test --captcha-dir ~/Downloads/validation_data/ --output ~/Downloads/stuff.txt --symbols symbols.txt
+```
+
+With `--model-name test` the classifier script will look for a model called `test.json` with weights `test.h5` in the current directory, and load the model up.
+
+The classifier runs all the images in `--captcha-dir` through the model, and saves the file names and the model's guess at captcha contained in the image in the `--output` file.
