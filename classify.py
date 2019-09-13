@@ -13,19 +13,57 @@ import argparse
 import tensorflow as tf
 import tensorflow.keras as keras
 
-# Build a Keras model given some parameters
-def create_model(captcha_length, captcha_num_symbols, input_shape, model_depth=5, module_size=2):
-  input_tensor = keras.Input(input_shape)
-  x = input_tensor
-  for i, module_length in enumerate([module_size] * model_depth):
-      for j in range(module_length):
-          x = keras.layers.Conv2D(32*2**min(i, 3), kernel_size=3, padding='same', kernel_initializer='he_uniform')(x)
-          x = keras.layers.BatchNormalization()(x)
-          x = keras.layers.Activation('relu')(x)
-      x = keras.layers.MaxPooling2D(2)(x)
+def decode(characters, y):
+    y = np.argmax(np.array(y), axis=2)[:,0]
+    return ''.join([characters[x] for x in y])
 
-  x = keras.layers.Flatten()(x)
-  x = [keras.layers.Dense(captcha_num_symbols, activation='softmax', name='c%d'%(i+1))(x) for i in range(captcha_length)]
-  model = keras.Model(inputs=input_tensor, outputs=x)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model-name', help='Model name to use for classification', type=str)
+    parser.add_argument('--captcha-dir', help='Where to read the captchas to break', type=str)
+    parser.add_argument('--output', help='File where the classifications should be saved', type=str)
+    parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
+    args = parser.parse_args()
 
-  return model
+    if args.model_name is None:
+        print("Please specify the CNN model to use")
+        exit(1)
+
+    if args.captcha_dir is None:
+        print("Please specify the directory with captchas to break")
+        exit(1)
+
+    if args.output is None:
+        print("Please specify the path to the output file")
+        exit(1)
+
+    if args.symbols is None:
+        print("Please specify the captcha symbols file")
+        exit(1)
+
+    symbols_file = open(args.symbols, 'r')
+    captcha_symbols = symbols_file.readline().strip()
+    symbols_file.close()
+
+    print("Classifying captchas with symbol set {" + captcha_symbols + "}")
+
+    with open(args.output, 'w') as output_file:
+      json_file = open(args.model_name+'.json', 'r')
+      loaded_model_json = json_file.read()
+      json_file.close()
+      model = keras.models.model_from_json(loaded_model_json)
+      model.load_weights(args.model_name+'.h5')
+      model.compile(loss='categorical_crossentropy',
+                    optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
+                    metrics=['accuracy'])
+
+      for x in os.listdir(args.captcha_dir):
+        # load image and preprocess it
+        raw_data = cv2.imread(os.path.join(args.captcha_dir, x))
+        rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
+        image = numpy.array(rgb_data) / 255.0
+        prediction = model.predict(image)
+        output_file.write(x + ", " + decode(captcha_symbols, prediction) + "\n")
+
+if __name__ == '__main__':
+    main()

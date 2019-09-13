@@ -81,7 +81,7 @@ def main():
     parser.add_argument('--length', help='Length of captchas in characters', type=int)
     parser.add_argument('--train-dataset', help='Where to look for the training image dataset', type=str)
     parser.add_argument('--validate-dataset', help='Where to look for the validation image dataset', type=str)
-    parser.add_argument('--output-model', help='Where to save the trained model', type=str)
+    parser.add_argument('--output-model-name', help='Where to save the trained model', type=str)
     parser.add_argument('--input-model', help='Where to look for the input model to continue training', type=str)
     parser.add_argument('--iterations', help='How many training iterations to do', type=int)
     parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
@@ -111,8 +111,8 @@ def main():
         print("Please specify the path to the validation data set")
         exit(1)
 
-    if args.output_model is None:
-        print("Please specify the path to save the trained model")
+    if args.output_model_name is None:
+        print("Please specify a name for the trained model")
         exit(1)
 
     if args.symbols is None:
@@ -140,7 +140,7 @@ def main():
 
         callbacks = [keras.callbacks.EarlyStopping(patience=3),
                      # keras.callbacks.CSVLogger('log.csv'),
-                     keras.callbacks.ModelCheckpoint(args.output_model, save_best_only=False)]
+                     keras.callbacks.ModelCheckpoint(args.output_model_name+'.h5', save_best_only=False)]
 
         model.fit_generator(generator=training_data,
                             validation_data=validation_data,
@@ -148,6 +148,10 @@ def main():
                             callbacks=callbacks,
                             use_multiprocessing=True,
                             workers=2)
+
+        # Save the model architecture to JSON
+        with open(args.output_model_name+".json", "w") as json_file:
+            json_file.write(model.to_json())
 
 if __name__ == '__main__':
     main()
