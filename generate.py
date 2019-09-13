@@ -44,9 +44,11 @@ def main():
 
     captcha_generator = captcha.image.ImageCaptcha(width=args.width, height=args.height)
 
-    captcha_symbols = None
-    with open(args.symbols) as symbols_file:
-        captcha_symbols = symbols_file.readline()
+    symbols_file = open(args.symbols, 'r')
+    captcha_symbols = symbols_file.readline().strip()
+    symbols_file.close()
+
+    print("Generating captchas with symbol set {" + captcha_symbols + "}")
 
     if not os.path.exists(args.output_dir):
         print("Creating output directory " + args.output_dir)
