@@ -157,16 +157,19 @@ def main():
                      # keras.callbacks.CSVLogger('log.csv'),
                      keras.callbacks.ModelCheckpoint(args.output_model_name+'.h5', save_best_only=False)]
 
-        model.fit_generator(generator=training_data,
-                            validation_data=validation_data,
-                            epochs=args.epochs,
-                            callbacks=callbacks,
-                            use_multiprocessing=True,
-                            workers=4)
-
         # Save the model architecture to JSON
         with open(args.output_model_name+".json", "w") as json_file:
             json_file.write(model.to_json())
+
+        try:
+            model.fit_generator(generator=training_data,
+                                validation_data=validation_data,
+                                epochs=args.epochs,
+                                callbacks=callbacks,
+                                use_multiprocessing=True)
+        except KeyboardInterrupt:
+            print('KeyboardInterrupt caught, saving current weights as ' + args.output_model_name+'_resume.h5')
+            model.save_weights(args.output_model_name+'_resume.h5')
 
 if __name__ == '__main__':
     main()

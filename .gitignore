@@ -1,3 +1,4 @@
+*.json
 *.csv
 *.h5
 *.png
