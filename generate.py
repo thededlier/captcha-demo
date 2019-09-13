@@ -48,6 +48,10 @@ def main():
     with open(args.symbols) as symbols_file:
         captcha_symbols = symbols_file.readline()
 
+    if not os.path.exists(args.output_dir):
+        print("Creating output directory " + args.output_dir)
+        os.makedirs(args.output_dir)
+
     for i in range(args.count):
         random_str = ''.join([random.choice(captcha_symbols) for j in range(args.length)])
         image_path = os.path.join(args.output_dir, random_str+'.png')
