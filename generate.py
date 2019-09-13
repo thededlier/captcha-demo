@@ -57,12 +57,14 @@ def main():
     for i in range(args.count):
         random_str = ''.join([random.choice(captcha_symbols) for j in range(args.length)])
         image_path = os.path.join(args.output_dir, random_str+'.png')
-        if not os.path.exists(image_path):
-            image = numpy.array(captcha_generator.generate_image(random_str))
-            cv2.imwrite(image_path, image)
-            print("Generated captcha " + str(i) + " of " + str(args.count))
-        else:
-            print("Skipping captcha " + str(i) + " of " + str(args.count) + ": File " + image_path + " already exists")
+        if os.path.exists(image_path):
+            version = 1
+            while os.path.exists(os.path.join(args.output_dir, random_str + '_' + str(version) + '.png')):
+                version += 1
+            image_path = os.path.join(args.output_dir, random_str + '_' + str(version) + '.png')
+
+        image = numpy.array(captcha_generator.generate_image(random_str))
+        cv2.imwrite(image_path, image)
 
 if __name__ == '__main__':
     main()

@@ -68,6 +68,11 @@ class ImageSequence(keras.utils.Sequence):
             processed_data = numpy.array(rgb_data) / 255.0
             X[i] = processed_data
 
+            # We have a little hack here - we save captchas as TEXT_num.png if there is more than one captcha with the text "TEXT"
+            # So the real label should have the "_num" stripped out.
+
+            random_image_label = random_image_label.split('_')[0]
+
             for j, ch in enumerate(random_image_label):
                 y[j][i, :] = 0
                 y[j][i, self.captcha_symbols.find(ch)] = 1
@@ -79,11 +84,12 @@ def main():
     parser.add_argument('--width', help='Width of captcha image', type=int)
     parser.add_argument('--height', help='Height of captcha image', type=int)
     parser.add_argument('--length', help='Length of captchas in characters', type=int)
+    parser.add_argument('--batch-size', help='How many images in training captcha batches', type=int)
     parser.add_argument('--train-dataset', help='Where to look for the training image dataset', type=str)
     parser.add_argument('--validate-dataset', help='Where to look for the validation image dataset', type=str)
     parser.add_argument('--output-model-name', help='Where to save the trained model', type=str)
     parser.add_argument('--input-model', help='Where to look for the input model to continue training', type=str)
-    parser.add_argument('--iterations', help='How many training iterations to do', type=int)
+    parser.add_argument('--epochs', help='How many training epochs to run', type=int)
     parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
     args = parser.parse_args()
 
@@ -99,8 +105,12 @@ def main():
         print("Please specify the captcha length")
         exit(1)
 
-    if args.iterations is None:
-        print("Please specify the number of training iterations to do")
+    if args.batch_size is None:
+        print("Please specify the training batch size")
+        exit(1)
+
+    if args.epochs is None:
+        print("Please specify the number of training epochs to run")
         exit(1)
 
     if args.train_dataset is None:
@@ -123,7 +133,12 @@ def main():
     with open(args.symbols) as symbols_file:
         captcha_symbols = symbols_file.readline()
 
-    with tf.device('/gpu:0'):
+    # physical_devices = tf.config.experimental.list_physical_devices('GPU')
+    # assert len(physical_devices) > 0, "No GPU available!"
+    # tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+    # with tf.device('/device:GPU:0'):
+    with tf.device('/cpu:0'):
         model = create_model(args.length, len(captcha_symbols), (args.height, args.width, 3))
 
         if args.input_model is not None:
@@ -135,8 +150,8 @@ def main():
 
         model.summary()
 
-        training_data = ImageSequence(args.train_dataset, 32, args.length, captcha_symbols, args.width, args.height)
-        validation_data = ImageSequence(args.validate_dataset, 32, args.length, captcha_symbols, args.width, args.height)
+        training_data = ImageSequence(args.train_dataset, args.batch_size, args.length, captcha_symbols, args.width, args.height)
+        validation_data = ImageSequence(args.validate_dataset, args.batch_size, args.length, captcha_symbols, args.width, args.height)
 
         callbacks = [keras.callbacks.EarlyStopping(patience=3),
                      # keras.callbacks.CSVLogger('log.csv'),
@@ -144,10 +159,10 @@ def main():
 
         model.fit_generator(generator=training_data,
                             validation_data=validation_data,
-                            epochs=args.iterations,
+                            epochs=args.epochs,
                             callbacks=callbacks,
                             use_multiprocessing=True,
-                            workers=2)
+                            workers=4)
 
         # Save the model architecture to JSON
         with open(args.output_model_name+".json", "w") as json_file:

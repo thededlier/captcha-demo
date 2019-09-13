@@ -18,6 +18,11 @@ The network is trained on the training set, and tested on the validation set, so
 ## Training the neural network
 
 ```
-./train.py --width 128 --height 64 --length 4 --output-model test.h5 --iterations 5 --train-dataset training_data --validate-dataset validation_data --symbols symbols.txt
+./train.py --width 128 --height 64 --length 4 --symbols symbols.txt --batch-size 32 --epochs 5 --output-model test.h5 --train-dataset training_data --validate-dataset validation_data
 ```
+
+Train the neural network for 5 epochs on the data specified. One epoch is one pass through the full dataset.
+For the initial problem of captcha recognition, we train the network for 100 epochs.
+
+The dataset for the initial training should be 128000 images, and the validation set should be 12800 images.
 
