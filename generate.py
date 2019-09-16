@@ -20,7 +20,7 @@ def main():
     parser.add_argument('--height', help='Height of captcha image', type=int)
     parser.add_argument('--length', help='Length of captchas in characters', type=int)
     parser.add_argument('--count', help='How many captchas to generate', type=int)
-    parser.add_argument('--scramble', help='Whether to scramble image names', type=bool)
+    parser.add_argument('--scramble', help='Whether to scramble image names', type=bool, default=False)
     parser.add_argument('--output-dir', help='Where to store the generated captchas', type=str)
     parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
     args = parser.parse_args()
@@ -39,10 +39,6 @@ def main():
 
     if args.count is None:
         print("Please specify the captcha count to generate")
-        exit(1)
-
-    if args.scramble is None:
-        print("Please specify whether to scramble image names")
         exit(1)
 
     if args.output_dir is None:
