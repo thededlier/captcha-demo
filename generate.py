@@ -8,6 +8,12 @@ import cv2
 import argparse
 import captcha.image
 
+def scramble_image_name(image_name):
+    import hashlib
+    m = hashlib.sha1()
+    m.update(image_name.encode('utf-8'))
+    return m.hexdigest()
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--width', help='Width of captcha image', type=int)
@@ -55,15 +61,16 @@ def main():
         os.makedirs(args.output_dir)
 
     for i in range(args.count):
-        random_str = ''.join([random.choice(captcha_symbols) for j in range(args.length)])
-        image_path = os.path.join(args.output_dir, random_str+'.png')
+        captcha_text = ''.join([random.choice(captcha_symbols) for j in range(args.length)])
+        image_name_scrambled = scramble_image_name(captcha_text)
+        image_path = os.path.join(args.output_dir, image_name_scrambled+'.png')
         if os.path.exists(image_path):
             version = 1
-            while os.path.exists(os.path.join(args.output_dir, random_str + '_' + str(version) + '.png')):
+            while os.path.exists(os.path.join(args.output_dir, image_name_scrambled + '_' + str(version) + '.png')):
                 version += 1
-            image_path = os.path.join(args.output_dir, random_str + '_' + str(version) + '.png')
+            image_path = os.path.join(args.output_dir, image_name_scrambled + '_' + str(version) + '.png')
 
-        image = numpy.array(captcha_generator.generate_image(random_str))
+        image = numpy.array(captcha_generator.generate_image(captcha_text))
         cv2.imwrite(image_path, image)
 
 if __name__ == '__main__':
