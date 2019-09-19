@@ -31,17 +31,14 @@ training or validation datasets.
 ## Training the neural network
 
 ```
-./train.py --width 128 --height 64 --length 4 --symbols symbols.txt --batch-size 32 --epochs 5 --output-model test.h5 --train-dataset training_data --validate-dataset validation_data
+./train.py --width 128 --height 64 --length 4 --symbols symbols.txt --batch-size 4 --epochs 2 --output-model test.h5 --train-dataset training_data --validate-dataset validation_data
 ```
 
-Train the neural network for 5 epochs on the data specified. One epoch is one
+Train the neural network for 2 epochs on the data specified. One epoch is one
 pass through the full dataset.
 
-For the initial problem of captcha recognition, we train the network for 2
-epochs.
-
-The suggested dataset size for the initial training is 20000 images, and the
-validation set size is 4000 images.
+The suggested training dataset size for the initial training for captcha length of 4 symbols 
+is 20000 images, with a validation dataset size of 4000 images.
 
 ## Running the classifier
 
