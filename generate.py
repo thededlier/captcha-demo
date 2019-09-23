@@ -23,6 +23,7 @@ def main():
     parser.add_argument('--scramble', help='Whether to scramble image names', default=False, action='store_true')
     parser.add_argument('--output-dir', help='Where to store the generated captchas', type=str)
     parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
+    parser.add_argument('--seed', help='Seed for the captcha generator', type=str)
     args = parser.parse_args()
 
     if args.width is None:
@@ -48,6 +49,12 @@ def main():
     if args.symbols is None:
         print("Please specify the captcha symbols file")
         exit(1)
+
+    random_seed = None
+    if args.seed is not None:
+        random_seed = args.seed.encode('utf-8')
+
+    random.seed(random_seed)
 
     captcha_generator = captcha.image.ImageCaptcha(width=args.width, height=args.height)
 

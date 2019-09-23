@@ -28,6 +28,19 @@ has no way to check if the answer from the CNN for some captcha is right or
 wrong! Make sure not to use the `--scramble` option when generating the
 training or validation datasets.
 
+### Generating Identical Sequences
+
+Using the `--seed` argument to the generator script, you can pass an arbitrary
+string that will be used as a random seed for captcha generation. This can be
+an integer, some text, or any other string that's representable in `utf-8`
+encoding.
+
+Setting the seed to the same value will mean the same sequence of captchas is
+produced. Note that the exact same sequence of *images* will not be produced,
+because a given captcha text can be rendered in many different ways. However
+the same sequence of captcha text samples will be produced.
+
+
 ## Training the neural network
 
 ```
@@ -37,7 +50,7 @@ training or validation datasets.
 Train the neural network for 2 epochs on the data specified. One epoch is one
 pass through the full dataset.
 
-The suggested training dataset size for the initial training for captcha length of 4 symbols 
+The suggested training dataset size for the initial training for captcha length of 4 symbols
 is 20000 images, with a validation dataset size of 4000 images.
 
 ## Running the classifier
