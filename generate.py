@@ -21,6 +21,7 @@ def main():
     parser.add_argument('--length', help='Length of captchas in characters', type=int)
     parser.add_argument('--count', help='How many captchas to generate', type=int)
     parser.add_argument('--scramble', help='Whether to scramble image names', default=False, action='store_true')
+    parser.add_argument('--mapping', help='Where to save the scrambled to unscrambled mapping', type=str)
     parser.add_argument('--output-dir', help='Where to store the generated captchas', type=str)
     parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
     parser.add_argument('--seed', help='Seed for the captcha generator', type=str)
@@ -68,11 +69,17 @@ def main():
         print("Creating output directory " + args.output_dir)
         os.makedirs(args.output_dir)
 
+    mapping = None
+    if args.mapping is not None:
+        mapping = dict()
+
     for i in range(args.count):
         captcha_text = ''.join([random.choice(captcha_symbols) for j in range(args.length)])
         image_name_scrambled = captcha_text
         if args.scramble:
             image_name_scrambled = scramble_image_name(captcha_text)
+            if args.mapping is not None:
+                mapping[image_name_scrambled+'.png'] = captcha_text
         image_path = os.path.join(args.output_dir, image_name_scrambled+'.png')
         if os.path.exists(image_path):
             version = 1
@@ -82,6 +89,11 @@ def main():
 
         image = numpy.array(captcha_generator.generate_image(captcha_text))
         cv2.imwrite(image_path, image)
+
+    if args.mapping is not None:
+        with open(args.mapping, 'w') as mapping_file:
+            for (hashed_text, orig_text) in mapping.items():
+                mapping_file.write(hashed_text + ", " + orig_text + "\n")
 
 if __name__ == '__main__':
     main()
