@@ -8,6 +8,7 @@ import cv2
 import argparse
 import captcha.image
 import subprocess
+import shutil
 
 def scramble(captcha_text, user_id, salt, project_number):
     import hashlib
@@ -110,6 +111,8 @@ def main():
                                 os.path.join(args.output_dir, args.user_id, 'challenge.zip'),
                                 os.path.join(args.output_dir, args.user_id, 'challenge')],
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        shutil.rmtree(os.path.join(args.output_dir, args.user_id, 'challenge'))
 
 if __name__ == '__main__':
     main()
