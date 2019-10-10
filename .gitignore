@@ -2,4 +2,5 @@
 *.csv
 *.h5
 *.png
+*.mp3
 __pycache__
