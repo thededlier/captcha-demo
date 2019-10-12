@@ -43,12 +43,12 @@ def main():
 
     for i in range(args.count):
         captcha_text = ''.join([random.choice(captcha_symbols) for j in range(args.length)])
-        audio_path = os.path.join(args.output_dir, captcha_text+'.mp3')
+        audio_path = os.path.join(args.output_dir, captcha_text+'.wav')
         if os.path.exists(audio_path):
             version = 1
-            while os.path.exists(os.path.join(args.output_dir, captcha_text + '_' + str(version) + '.mp3')):
+            while os.path.exists(os.path.join(args.output_dir, captcha_text + '_' + str(version) + '.wav')):
                 version += 1
-            audio_path = os.path.join(args.output_dir, captcha_text + '_' + str(version) + '.mp3')
+            audio_path = os.path.join(args.output_dir, captcha_text + '_' + str(version) + '.wav')
 
         audio = gtts.gTTS(captcha_text)
         audio.save(audio_path)
