@@ -63,7 +63,7 @@ def main():
 
             for x in os.listdir(args.captcha_dir):
                 if x.endswith('.mp3'):
-                    FilePath = args.captcha_dir + x
+                    FilePath = args.captcha_dir + '/' + x
                     FileData = open(FilePath, "rb")
                     URL = "https://gateway-lon.watsonplatform.net/speech-to-text/api/v1/recognize"
 
@@ -76,7 +76,7 @@ def main():
                     data = r.json()
                     sol = data['results'][0]['alternatives'][0]['transcript']
                     sol = 'X. R. NGV MHA '
-                    prediction = sol.replace(' ', '').replace('.', '').upper()
+                    pred = sol.replace(' ', '').replace('.', '').upper()
                 else:
                     # load image and preprocess it
                     raw_data = cv2.imread(os.path.join(args.captcha_dir, x))
@@ -85,8 +85,9 @@ def main():
                     (c, h, w) = image.shape
                     image = image.reshape([-1, c, h, w])
                     prediction = model.predict(image)
+                    pred = decode(captcha_symbols, prediction)
 
-                output_file.write(x + ", " + decode(captcha_symbols, prediction) + "\n")
+                output_file.write(x + ", " + pred + "\n")
 
                 print('Classified ' + x)
 
