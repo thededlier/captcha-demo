@@ -75,7 +75,6 @@ def main():
                     	)
                     data = r.json()
                     sol = data['results'][0]['alternatives'][0]['transcript']
-                    sol = 'X. R. NGV MHA '
                     pred = sol.replace(' ', '').replace('.', '').upper()
                 else:
                     # load image and preprocess it
@@ -87,7 +86,7 @@ def main():
                     prediction = model.predict(image)
                     pred = decode(captcha_symbols, prediction)
 
-                output_file.write(x + ", " + pred + "\n")
+                output_file.write(x + "," + pred + "\n")
 
                 print('Classified ' + x)
 
