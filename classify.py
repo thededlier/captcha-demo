@@ -62,7 +62,7 @@ def main():
                           metrics=['accuracy'])
 
             for x in os.listdir(args.captcha_dir):
-                if x.ends_with('.mp3'):
+                if x.endswith('.mp3'):
                     FilePath = args.captcha_dir + x
                     FileData = open(FilePath, "rb")
                     URL = "https://gateway-lon.watsonplatform.net/speech-to-text/api/v1/recognize"
