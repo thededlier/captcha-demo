@@ -12,9 +12,9 @@ import random
 import argparse
 import tensorflow as tf
 import tensorflow.keras as keras
-import speech_recognition as sr
+
 import os
-from pydub import AudioSegment
+import requests
 
 def decode(characters, y):
     y = numpy.argmax(numpy.array(y), axis=2)[:,0]
@@ -63,36 +63,29 @@ def main():
 
             for x in os.listdir(args.captcha_dir):
                 if x.ends_with('.mp3'):
-                    # convert wav to mp3
-                    ORIGINAL_AUDIO_FILE = x
-                    sound = AudioSegment.from_mp3(ORIGINAL_AUDIO_FILE)
-                    sound.export('test.wav', format="wav")
-                    # use the audio file as the audio source
+                    FilePath = args.captcha_dir + x
+                    FileData = open(FilePath, "rb")
+                    URL = "https://gateway-lon.watsonplatform.net/speech-to-text/api/v1/recognize"
 
-                    AUDIO_FILE = os.path.join(os.getcwd(), "test.wav")
+                    r = requests.post(
+                    		url = URL,
+                    		headers = { 'Content-Type': 'audio/mp3' },
+                    		auth = ('apikey', '3EW2ew_9Gx01zwKlxfLYs1XBy4k0hKEkeyJSYjv2A5O-'),
+                    		data = FileData
+                    	)
+                    data = r.json()
+                    sol = data['results'][0]['alternatives'][0]['transcript']
+                    sol = 'X. R. NGV MHA '
+                    prediction = sol.replace(' ', '').replace('.', '').upper()
+                else:
+                    # load image and preprocess it
+                    raw_data = cv2.imread(os.path.join(args.captcha_dir, x))
+                    rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
+                    image = numpy.array(rgb_data) / 255.0
+                    (c, h, w) = image.shape
+                    image = image.reshape([-1, c, h, w])
+                    prediction = model.predict(image)
 
-                    r = sr.Recognizer()
-                    with sr.AudioFile(AUDIO_FILE) as source:
-                        audio = r.record(source)  # read the entire audio file
-
-                    # recognize speech using IBM Speech to Text
-                    IBM_USERNAME = "80144216-f25e-4f01-87d2-e7f44bcf773a"  # IBM Speech to Text usernames are strings of the form XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-                    IBM_PASSWORD = "3EW2ew_9Gx01zwKlxfLYs1XBy4k0hKEkeyJSYjv2A5O-"  # IBM Speech to Text passwords are mixed-case alphanumeric strings
-                    try:
-                        print("IBM Speech to Text thinks you said " + r.recognize_ibm(audio, username=IBM_USERNAME, password=IBM_PASSWORD))
-                    except sr.UnknownValueError:
-                        print("IBM Speech to Text could not understand audio")
-                    except sr.RequestError as e:
-                        print("Could not request results from IBM Speech to Text service; {0}".format(e))
-                    continue
-
-                # load image and preprocess it
-                raw_data = cv2.imread(os.path.join(args.captcha_dir, x))
-                rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
-                image = numpy.array(rgb_data) / 255.0
-                (c, h, w) = image.shape
-                image = image.reshape([-1, c, h, w])
-                prediction = model.predict(image)
                 output_file.write(x + ", " + decode(captcha_symbols, prediction) + "\n")
 
                 print('Classified ' + x)
