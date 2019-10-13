@@ -50,6 +50,7 @@ def main():
                 version += 1
             audio_path = os.path.join(args.output_dir, captcha_text + '_' + str(version) + '.wav')
 
+        print(captcha_text)
         audio = gtts.gTTS(captcha_text)
         audio.save(audio_path)
 
