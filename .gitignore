@@ -3,4 +3,5 @@
 *.h5
 *.png
 *.mp3
+*.wav
 __pycache__
