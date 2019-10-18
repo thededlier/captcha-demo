@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output-dir', help='Where to store the generated captchas', type=str)
     parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
+    parser.add_argument('--is-test', help='Whether the data generated is for train or test', type=str)
     args = parser.parse_args()
 
     if args.output_dir is None:
@@ -34,8 +35,13 @@ def main():
 
     engine = pyttsx3.init(driverName='sapi5', debug=True)
 
+    if args.is_test == 'yes':
+        voice_speeds = [125 + 10, 150 + 5, 175 + 9, 200 + 15]
+    else:
+        voice_speeds = [100, 125, 150, 175, 200, 225, 250, 300]
+        
     for i in range(len(captcha_symbols)):
-        for voice_speed in [100, 125, 150, 175, 200, 225, 250, 300]:
+        for voice_speed in voice_speeds:
             alphanum = captcha_symbols[i]
             audio_path = os.path.join(args.output_dir, alphanum+'.wav')
             version = 1

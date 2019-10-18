@@ -23,6 +23,7 @@ def decode(characters, y):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model-name', help='Model name to use for classification', type=str)
+    parser.add_argument('--audio-model-name', help='Model name to use for classification', type=str)
     parser.add_argument('--captcha-dir', help='Where to read the captchas to break', type=str)
     parser.add_argument('--output', help='File where the classifications should be saved', type=str)
     parser.add_argument('--symbols', help='File with the symbols to use in captchas', type=str)
@@ -61,21 +62,34 @@ def main():
                           optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
                           metrics=['accuracy'])
 
+            json_file = open(args.audio_model_name+'.json', 'r')
+            loaded_model_json = json_file.read()
+            json_file.close()
+            audio_model = keras.models.model_from_json(loaded_model_json)
+            audio_model.load_weights(args.audio_model_name+'.h5')
+            audio_model.compile(loss='categorical_crossentropy',
+                          optimizer=keras.optimizers.Adam(1e-3, amsgrad=True),
+                          metrics=['accuracy'])
+
             for x in os.listdir(args.captcha_dir):
                 if x.endswith('.mp3'):
-                    FilePath = args.captcha_dir + '/' + x
-                    FileData = open(FilePath, "rb")
-                    URL = "https://gateway-lon.watsonplatform.net/speech-to-text/api/v1/recognize"
+                    x, sr = librosa.load(os.path.join(args.captcha_dir, x))
+                    plt.figure(figsize=(1.28, 0.64), dpi = 100)
+                    plt.axis('off')
+                    plt.axes([0., 0., 1., 1., ], frameon=False, xticks=[], yticks=[])
+                    mel_spec = librosa.feature.melspectrogram(y=x, sr=sr)
+                    librosa.display.specshow(librosa.power_to_db(mel_spec, ref = np.max))
+                    plt.savefig('temp.png', bbox_inches=None, pad_inches=0)
+                    plt.close()
 
-                    r = requests.post(
-                    		url = URL,
-                    		headers = { 'Content-Type': 'audio/mp3' },
-                    		auth = ('apikey', '3EW2ew_9Gx01zwKlxfLYs1XBy4k0hKEkeyJSYjv2A5O-'),
-                    		data = FileData
-                    	)
-                    data = r.json()
-                    sol = data['results'][0]['alternatives'][0]['transcript']
-                    pred = sol.replace(' ', '').replace('.', '').upper()
+                    # load image and preprocess it
+                    raw_data = cv2.imread(temp.png)
+                    rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
+                    image = numpy.array(rgb_data) / 255.0
+                    (c, h, w) = image.shape
+                    image = image.reshape([-1, c, h, w])
+                    prediction = audio_model.predict(image)
+                    pred = decode(captcha_symbols, prediction)
                 else:
                     # load image and preprocess it
                     raw_data = cv2.imread(os.path.join(args.captcha_dir, x))
