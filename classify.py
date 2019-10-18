@@ -3,7 +3,7 @@
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-
+warnings.filterwarnings("ignore", category=UserWarning)
 import os
 import cv2
 import numpy
@@ -13,9 +13,9 @@ import argparse
 import tensorflow as tf
 import tensorflow.keras as keras
 import librosa
-
+import librosa.display
+import matplotlib.pyplot as plt
 import os
-import requests
 
 def decode(characters, y):
     y = numpy.argmax(numpy.array(y), axis=2)[:,0]
@@ -74,31 +74,36 @@ def main():
 
             for x in os.listdir(args.captcha_dir):
                 if x.endswith('.mp3'):
-                    x, sr = librosa.load(os.path.join(args.captcha_dir, x))
+                    # Save mp3 as a temp spectogram
+                    sample, sr = librosa.load(os.path.join(args.captcha_dir, x))
                     plt.figure(figsize=(1.28, 0.64), dpi = 100)
                     plt.axis('off')
                     plt.axes([0., 0., 1., 1., ], frameon=False, xticks=[], yticks=[])
-                    mel_spec = librosa.feature.melspectrogram(y=x, sr=sr)
-                    librosa.display.specshow(librosa.power_to_db(mel_spec, ref = np.max))
+                    mel_spec = librosa.feature.melspectrogram(y = sample, sr = sr)
+                    librosa.display.specshow(librosa.power_to_db(mel_spec, ref = numpy.max))
                     plt.savefig('temp.png', bbox_inches=None, pad_inches=0)
                     plt.close()
 
                     # load image and preprocess it
-                    raw_data = cv2.imread(temp.png)
-                    rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
+                    raw_data = cv2.imread('temp.png')
+                    rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2GRAY)
+                    rgb_data = cv2.equalizeHist(rgb_data)
+                    rgb_data = numpy.expand_dims(rgb_data, axis=3)
                     image = numpy.array(rgb_data) / 255.0
                     (c, h, w) = image.shape
-                    image = image.reshape([-1, c, h, w])
-                    prediction = audio_model.predict(image)
+                    # import pdb; pdb.set_trace()
+                    reshaped_image = image.reshape([-1, c, h, w])
+                    prediction = audio_model.predict(reshaped_image)
                     pred = decode(captcha_symbols, prediction)
                 else:
                     # load image and preprocess it
                     raw_data = cv2.imread(os.path.join(args.captcha_dir, x))
+                    # rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2GRAY)
                     rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2RGB)
                     image = numpy.array(rgb_data) / 255.0
                     (c, h, w) = image.shape
-                    image = image.reshape([-1, c, h, w])
-                    prediction = model.predict(image)
+                    reshaped_image = image.reshape([-1, c, h, w])
+                    prediction = model.predict(reshaped_image)
                     pred = decode(captcha_symbols, prediction)
 
                 output_file.write(x + "," + pred + "\n")
