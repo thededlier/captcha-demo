@@ -1,3 +1,4 @@
+# Generate audio as separate alphabets and numbers in different variations
 
 #!/usr/bin/env python3
 
@@ -39,7 +40,7 @@ def main():
         voice_speeds = [125 + 10, 150 + 5, 175 + 9, 200 + 15]
     else:
         voice_speeds = [100, 125, 150, 175, 200, 225, 250, 300]
-        
+
     for i in range(len(captcha_symbols)):
         for voice_speed in voice_speeds:
             alphanum = captcha_symbols[i]

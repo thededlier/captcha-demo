@@ -1,3 +1,5 @@
+# NOTE: This model sucks
+
 import os
 import librosa   #for audio processing
 import numpy as np

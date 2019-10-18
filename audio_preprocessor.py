@@ -1,6 +1,8 @@
+# Convers audio file to spectogram
+
 import os
 import numpy as np
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 import os
 import librosa
 import librosa.display

@@ -74,6 +74,7 @@ def main():
 
             for x in os.listdir(args.captcha_dir):
                 if x.endswith('.mp3'):
+                    # Classify Audio file
                     # Save mp3 as a temp spectogram
                     sample, sr = librosa.load(os.path.join(args.captcha_dir, x))
                     plt.figure(figsize=(1.28, 0.64), dpi = 100)
@@ -96,6 +97,7 @@ def main():
                     prediction = audio_model.predict(reshaped_image)
                     pred = decode(captcha_symbols, prediction)
                 else:
+                    # Classify image file
                     # load image and preprocess it
                     raw_data = cv2.imread(os.path.join(args.captcha_dir, x))
                     # rgb_data = cv2.cvtColor(raw_data, cv2.COLOR_BGR2GRAY)

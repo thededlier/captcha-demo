@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Generates captchas using gtts only
+# For voice variations use audio_alpha_num_generator.py
 import os
 import numpy
 import random
