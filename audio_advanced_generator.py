@@ -46,18 +46,18 @@ def main():
     engine = pyttsx3.init(driverName='sapi5', debug=True)
     voices = engine.getProperty('voices')
     for i in range(args.count):
-        captcha_text = ''.join([random.choice(captcha_symbols) for j in range(args.length)])
-        audio_path = os.path.join(args.output_dir, captcha_text+'.wav')
+        captcha_text = ' '.join([random.choice(captcha_symbols) for j in range(args.length)])
+        audio_path = os.path.join(args.output_dir, captcha_text.replace(' ', '') +'.wav')
         if os.path.exists(audio_path):
             version = 1
-            while os.path.exists(os.path.join(args.output_dir, captcha_text + '_' + str(version) + '.wav')):
+            while os.path.exists(os.path.join(args.output_dir, captcha_text.replace(' ', '') + '_' + str(version) + '.wav')):
                 version += 1
-            audio_path = os.path.join(args.output_dir, captcha_text + '_' + str(version) + '.wav')
+            audio_path = os.path.join(args.output_dir, captcha_text.replace(' ', '') + '_' + str(version) + '.wav')
 
         print(captcha_text)
 
         engine.setProperty('voice', random.choice(voices).id)
-        # engine.setProperty('rate', voice_speed)
+        engine.setProperty('rate', 150)
         engine.save_to_file(captcha_text, audio_path)
         engine.runAndWait()
 
