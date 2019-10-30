@@ -54,7 +54,7 @@ def main():
                 version += 1
             audio_path = os.path.join(args.output_dir, captcha_text.replace(' ', '') + '_' + str(version) + '.wav')
 
-        print(captcha_text)
+        print(i, ':', captcha_text)
 
         engine.setProperty('voice', random.choice(voices).id)
         engine.setProperty('rate', 150)

@@ -10,10 +10,10 @@ import argparse
 
 def create_spectogram(path, spec_dir, audio_file):
     x, sr = librosa.load(os.path.join(path, audio_file))
-    plt.figure(figsize=(1.28, 1.28), dpi = 100)
+    plt.figure(figsize=(1.28, 0.64), dpi = 100)
     plt.axis('off')
     plt.axes([0., 0., 1., 1., ], frameon=False, xticks=[], yticks=[])
-    mel_spec = librosa.feature.melspectrogram(y=x, sr=sr)
+    mel_spec = librosa.feature.melspectrogram(y = x, sr = sr)
     librosa.display.specshow(librosa.power_to_db(mel_spec, ref = np.max))
     plt.savefig(os.path.join(spec_dir, os.path.splitext(audio_file)[0]+'.png'), bbox_inches=None, pad_inches=0)
     plt.close()
@@ -24,7 +24,7 @@ def main():
     args = parser.parse_args()
 
     if args.audio_dir is None:
-        print("Please specify the captcha length")
+        print("Please specify the audio directory")
         exit(1)
 
     spec_dir = args.audio_dir + '_spec'
